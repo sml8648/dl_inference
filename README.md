@@ -19,6 +19,11 @@
    
  * Github action을 이용하여 CI 구축
  * Dockerfile을 이용하여 msa 형태로 구축
+ * Web-single-pattern으로 배포
+   - 단일 REST 서버(FastAPI) 인터페이스, 전처리, 모델을 한곳에서 사용
+   - <img src="./asset/diagram.png" width=50% height=50%>
+   - 출처 : https://github.com/mercari/ml-system-design-pattern/blob/master/Serving-patterns/Web-single-pattern/design_ko.md
+ 
 
 ## Directory structure
 ```
