@@ -7,7 +7,7 @@
 ## 세부 구현 사항
 * 표준 서빙 프로토콜인 v2 inference 프로토콜에서 HTTP 프로토콜로 구현
   - **Health** : GET v2/health/live GET v2/health/ready GET v2/models/${MODEL_NAME}[/versions/${MODEL_VERSION}]/ready
-  - **Server** Metadata : GET v2
+  - **Server Metadata** : GET v2
   - **Model Metadata** : GET v2/models/${MODEL_NAME}[/versions/${MODEL_VERSION}]
   - **Inference** : POST v2/models/${MODEL_NAME}[/versions/${MODEL_VERSION}]/infer
   - ref : https://kserve.github.io/website/0.8/modelserving/inference_api/#httprest
