@@ -27,6 +27,7 @@ async def task(url):
 @app.get("/v2/health/live")
 async def health_live():
 
+    # 서버 주소도 환경 변수로 받아야겠다.
     result = await task("http://localhost:8081/api-description")
 
     if result.status_code == 200:
