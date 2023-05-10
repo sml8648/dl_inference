@@ -51,7 +51,8 @@ class TransformersSeqClassifierHandler(BaseHandler, ABC):
             else "cpu"
         )
         # read configs for the mode, model_name, etc. from setup_config.json
-        setup_config_path = os.path.join(model_dir, "setup_config.json")
+        setup_config_path = os.path.join(model_dir, "setup_config_sequence.json")
+
         if os.path.isfile(setup_config_path):
             with open(setup_config_path) as setup_config_file:
                 self.setup_config = json.load(setup_config_file)

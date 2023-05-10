@@ -1,6 +1,3 @@
-# TODO http error를 어떻게 다루는지 알아보자
-# default model version을 설정을 해야한다.
-
 from typing import Union
 from fastapi import FastAPI, HTTPException
 import httpx
@@ -27,7 +24,7 @@ async def task(url):
 @app.get("/v2/health/live")
 async def health_live():
 
-    # 서버 주소도 환경 변수로 받아야겠다.
+    # TODO : 서버주소 환경 변수로 받기
     result = await task("http://localhost:8081/api-description")
 
     if result.status_code == 200:
@@ -41,7 +38,6 @@ async def health_live():
 @app.get("/v2/health/ready")
 async def health_ready():
 
-    # 이렇게 하는거 맞는건가?
     result = await task("http://localhost:8081/models")
     models = json.loads(result.text)['models']
     
@@ -123,7 +119,7 @@ async def health_model_with_version(
 @app.get("/v2")
 def server_metadata():
 
-    # name, version은 환경변수로 받는것으로 변경 필요
+    # TODO : name, version은 환경변수로 받는것으로 변경 필요
     try:
         metadata_server_response = {
             "name": "Inference server",
@@ -138,17 +134,78 @@ def server_metadata():
 
 # Model Metadata
 @app.get("/v2/model/{model_name}")
-def model_metadata(model_name: str):
-    # curl to torchserve
-    pass
+async def model_metadata(model_name: str):
+
+    response = await task(f"http://localhost:8081/models/{model_name}")
+
+    if response.status_code == 200:
+        
+        response_json = json.loads(response.text)[0]
+
+        metadata_model_response = {
+            "name": response_json['modelName'],
+            "version": response_json['modelVersion'],
+            "platform": "pytorch_torchscript",
+            "inputs": {
+                "metadata_tensor":{
+                    "name":"input_sentence",
+                    "datatype":"string"
+                }
+            },
+            "outputs": {
+                "metadata_tensor":{
+                    "name":"Positive_negative",
+                    "datatype":"string"
+                }
+            }
+        }
+
+        return metadata_model_response
+    
+    elif response.status_code == 404:
+        # TODO : detail 말고 metadata_model_error_response로 override 하는법 찾기
+        raise HTTPException(status_code=404, detail={"error": "Model not found or Model version not found"})
+    else:
+        # status_code 500
+        raise HTTPException(status_code=404, detail={"error": "Internal Server Error"})
+
 
 @app.get("/v2/model/{model_name}/versions/{model_version}")
-def model_metadata_with_version(
+async def model_metadata_with_version(
     model_name: str,
     model_version: str
 ):
-    # curl to torchserve
-    pass
+    # TODO 중복되는 코드 줄이는 방법 생각해보기
+    response = await task(f"http://localhost:8081/models/{model_name}/{model_version}")
+
+    if response.status_code == 200:
+        
+        response_json = json.loads(response.text)[0]
+
+        metadata_model_response = {
+            "name": response_json['modelName'],
+            "version": response_json['modelVersion'],
+            "platform": "pytorch_torchscript",
+            "inputs": {
+                "metadata_tensor":{
+                    "name":"input_sentence",
+                    "datatype":"string"
+                }
+            },
+            "outputs": {
+                "metadata_tensor":{
+                    "name":"Positive_negative",
+                    "datatype":"string"
+                }
+            }
+        }
+
+        return metadata_model_response
+    
+    elif response.status_code == 404:
+        raise HTTPException(status_code=404, detail={"error": "Model not found or Model version not found"})
+    else: # status_code 500
+        raise HTTPException(status_code=404, detail={"error": "Internal Server Error"})
 
 # Inference
 @app.get("/v2/models/{model_name}/infer")
