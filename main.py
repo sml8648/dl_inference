@@ -1,8 +1,13 @@
 from typing import Union
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel
 import httpx
 import asyncio
 import json
+import os
+
+from datetime import datetime
 
 app = FastAPI()
 
@@ -207,18 +212,100 @@ async def model_metadata_with_version(
     else: # status_code 500
         raise HTTPException(status_code=404, detail={"error": "Internal Server Error"})
 
-# Inference
-@app.get("/v2/models/{model_name}/infer")
-def model_infer(
-    model_name: str
-):
-    # curl to torchserve
-    pass
+class InputStr(BaseModel):
+    text:str
 
-@app.get("/v2/models/{model_name}/versions/{model_version}/infer")
-def model_infer_with_version(
+async def request_post(client, url, data):
+    response = await client.post(url, data=data)
+    return response
+
+async def task_post(url, file_path):
+    async with httpx.AsyncClient() as client:
+        # Read the file content
+        with open(file_path, "r") as file:
+            file_content = file.read()
+
+        tasks = request_post(client, url, data=file_content)
+        result = await asyncio.gather(tasks)
+        return result[0]
+    
+# Inference
+@app.post("/v2/models/{model_name}/infer")
+async def model_infer(
     model_name: str,
-    model_version: str
+    inputstr: InputStr
 ):
-    # curl to torchserve
-    pass
+
+    input_json = jsonable_encoder(inputstr)
+
+    file_hash = hash(datetime.now())
+    file_path = f'./tmp/{file_hash}.txt'
+
+    with open(file_path,"w") as file:
+        file.write(str(input_json))
+
+    url = f"http://127.0.0.1:8080/predictions/{model_name}"
+    response = await task_post(url,file_path)
+
+    os.remove(file_path)
+
+    if response.status_code == 200:
+
+        inference_response = {
+            "model_name":model_name,
+            "id":"tmp_string",
+            "outputs": {
+                "Positive_negative":{
+                    "result":response.text,
+                }
+            }
+        }
+
+        return inference_response
+    
+    elif response.status_code == 404:
+        raise HTTPException(status_code=404, detail={"error": "Model not found or Model version not found"})
+    elif response.status_code == 500:
+        raise HTTPException(status_code=404, detail={"error": "Internal Server Error"})
+    elif response.status_code == 503:
+        raise HTTPException(status_code=404, detail={"error": "No worker is available to serve request"})
+
+@app.post("/v2/models/{model_name}/versions/{model_version}/infer")
+async def model_infer_with_version(
+    model_name: str,
+    model_version: str,
+    inputstr: InputStr
+):
+    input_json = jsonable_encoder(inputstr)
+
+    file_hash = hash(datetime.now())
+    file_path = f'./tmp/{file_hash}.txt'
+
+    with open(file_path,"w") as file:
+        file.write(str(input_json))
+
+    url = f"http://127.0.0.1:8080/predictions/{model_name}/{model_version}"
+    response = await task_post(url,file_path)
+
+    os.remove(file_path)
+
+    if response.status_code == 200:
+
+        inference_response = {
+            "model_name":model_name,
+            "id":"tmp_string",
+            "outputs": {
+                "Positive_negative":{
+                    "result":response.text,
+                }
+            }
+        }
+
+        return inference_response
+    
+    elif response.status_code == 404:
+        raise HTTPException(status_code=404, detail={"error": "Model not found or Model version not found"})
+    elif response.status_code == 500:
+        raise HTTPException(status_code=404, detail={"error": "Internal Server Error"})
+    elif response.status_code == 503:
+        raise HTTPException(status_code=404, detail={"error": "No worker is available to serve request"})
