@@ -17,7 +17,7 @@ app = FastAPI()
 
 @app.get("/")
 def read_root():
-    return {"Hello": "This is deep-learning inference server ~ !"}
+    return {"Hello": "This is deep-learning inference server~ !"}
 
 # Health
 @app.get("/v2/health/live")
@@ -182,7 +182,7 @@ async def model_infer(model_name: str, inputstr: InputStr):
     input_json = jsonable_encoder(inputstr)
 
     breakpoint()
-    
+
     file_hash = hash(datetime.now())
     file_path = f"./tmp/{file_hash}.txt"
 
