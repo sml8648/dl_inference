@@ -5,7 +5,10 @@ from fastapi import HTTPException
 
 
 class InputStr(BaseModel):
-    text:str
+    name:str
+    #shape:[]
+    datatype:str
+    data:str
 
 # async get request
 async def request(client, url):

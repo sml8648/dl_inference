@@ -135,6 +135,7 @@ async def model_metadata(model_name: str):
             "version": response_json["modelVersion"],
             # 질문 : pytorcheager 모드는 platform에 따로 없는지?
             "platform": "pytorch_torchscript",
+            # 질문 : NLP 모델임으로 입력으로 문자열을 받는다고 하면 shape는 따로 어떻게 설정을 해줘야 하는걸까요?
             "inputs": {
                 "metadata_tensor": {"name": "input_sentence", "datatype": "string"}
             },

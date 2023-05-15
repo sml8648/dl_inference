@@ -7,5 +7,7 @@
     "max_length":"150",
     "captum_explanation":true,
     "FasterTransformer":false,
-    "embedding_name": "bert"
+    "embedding_name": "bert",
+    "BetterTransformer":false,
+    "model_parallel":false
    }
