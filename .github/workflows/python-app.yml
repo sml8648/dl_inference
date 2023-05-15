@@ -18,8 +18,7 @@ jobs:
         port: ${{ secrets.PORT }}
         script: |
           cd /root/dl_inference
+          git pull
           docker stop test || True
           docker rm test || True
           docker build . -t test
-          docker run --name test -d -p 8000:8000 test
-          docker exec -it test bash ./model_register.sh
