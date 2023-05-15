@@ -22,18 +22,18 @@ def read_root():
 # Health
 @app.get("/v2/health/live")
 async def health_live():
-    response = await task(f"{management_server}/api-description")
+    response = await request_handler(f"{management_server}/api-description")
 
     if response.status_code == 200:
         Server_live_response = {"response": "Inference server is alive"}
         return Server_live_response
     else:
-        error_handling(response)
+        error_handler(response)
 
 
 @app.get("/v2/health/ready")
 async def health_ready():
-    response = await task(f"{management_server}/models")
+    response = await request_handler(f"{management_server}/models")
     models = json.loads(response.text)["models"]
 
     if response.status_code == 200:
@@ -41,7 +41,7 @@ async def health_ready():
         for model in models:
             # 각각의 모델 마다 돌면서 상태 확인함
             model_name = model["modelName"]
-            model_query = await task(f"{management_server}/models/{model_name}")
+            model_query = await request_handler(f"{management_server}/models/{model_name}")
             model_status = json.loads(model_query.text)[0]["workers"]
             if not len(model_status):
                 # 가용하지 않은 모델 발견
@@ -56,12 +56,12 @@ async def health_ready():
             }
             return Server_Ready_error_response
     else:
-        error_handling(response)
+        error_handler(response)
 
 
 @app.get("/v2/models/{model_name}/ready")
 async def health_model(model_name: str):
-    response = await task(f"{management_server}/models/{model_name}")
+    response = await request_handler(f"{management_server}/models/{model_name}")
 
     if response.status_code == 200:
         # model_name의 default version의 워커의 상태를 점검
@@ -81,12 +81,12 @@ async def health_model(model_name: str):
             return Model_Ready_error_response
 
     else:
-        error_handling(response)
+        error_handler(response)
 
 
 @app.get("/v2/models/{model_name}/version/{model_version}/ready")
 async def health_model_with_version(model_name: str, model_version: str):
-    response = await task(f"{management_server}/models/{model_name}/{model_version}")
+    response = await request_handler(f"{management_server}/models/{model_name}/{model_version}")
 
     if response.status_code == 200:
         model_workers = json.loads(response.text)[0]["workers"]
@@ -104,7 +104,7 @@ async def health_model_with_version(model_name: str, model_version: str):
             return Model_Ready_error_response
 
     else:
-        error_handling(response)
+        error_handler(response)
 
 
 # Server Metadata
@@ -125,7 +125,7 @@ def server_metadata():
 # Model Metadata
 @app.get("/v2/model/{model_name}")
 async def model_metadata(model_name: str):
-    response = await task(f"{management_server}/models/{model_name}")
+    response = await request_handler(f"{management_server}/models/{model_name}")
 
     if response.status_code == 200:
         response_json = json.loads(response.text)[0]
@@ -147,12 +147,12 @@ async def model_metadata(model_name: str):
         return metadata_model_response
 
     else:
-        error_handling(response)
+        error_handler(response)
 
 @app.get("/v2/model/{model_name}/versions/{model_version}")
 async def model_metadata_with_version(model_name: str, model_version: str):
     
-    response = await task(f"{management_server}/models/{model_name}/{model_version}")
+    response = await request_handler(f"{management_server}/models/{model_name}/{model_version}")
 
     if response.status_code == 200:
         response_json = json.loads(response.text)[0]
@@ -172,14 +172,17 @@ async def model_metadata_with_version(model_name: str, model_version: str):
         return metadata_model_response
 
     else:
-        error_handling(response)
+        error_handler(response)
 
 
 # Inference
 @app.post("/v2/models/{model_name}/infer")
 async def model_infer(model_name: str, inputstr: InputStr):
+
     input_json = jsonable_encoder(inputstr)
 
+    breakpoint()
+    
     file_hash = hash(datetime.now())
     file_path = f"./tmp/{file_hash}.txt"
 
@@ -187,7 +190,7 @@ async def model_infer(model_name: str, inputstr: InputStr):
         file.write(str(input_json))
 
     url = f"{inference_server}/predictions/{model_name}"
-    response = await task_post(url, file_path)
+    response = await request_post_handler(url, file_path)
 
     os.remove(file_path)
 
@@ -197,6 +200,10 @@ async def model_infer(model_name: str, inputstr: InputStr):
             "id": "tmp_string",
             "outputs": {
                 "Positive_negative": {
+                    "name": "inference_result",
+                    #"shape":[]
+                    "datatype":"string",
+                    #"parameter":[]
                     "result": response.text,
                 }
             },
@@ -205,7 +212,7 @@ async def model_infer(model_name: str, inputstr: InputStr):
         return inference_response
 
     else:
-        error_handling(response)
+        error_handler(response)
 
 
 @app.post("/v2/models/{model_name}/versions/{model_version}/infer")
@@ -221,16 +228,21 @@ async def model_infer_with_version(
         file.write(str(input_json))
 
     url = f"{inference_server}/predictions/{model_name}/{model_version}"
-    response = await task_post(url, file_path)
+    response = await request_post_handler(url, file_path)
 
     os.remove(file_path)
 
     if response.status_code == 200:
         inference_response = {
             "model_name": model_name,
+            "model_version": model_version,
             "id": "tmp_string",
             "outputs": {
                 "Positive_negative": {
+                    "name": "inference_result",
+                    #"shape":[]
+                    "datatype":"string",
+                    #"parameter":[]
                     "result": response.text,
                 }
             },
@@ -239,4 +251,4 @@ async def model_infer_with_version(
         return inference_response
 
     else:
-        error_handling(response)
+        error_handler(response)
