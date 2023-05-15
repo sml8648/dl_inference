@@ -29,14 +29,15 @@
 ```
 dl_inderence
 ├──📁logs
-├──📁model_stroe -> torchserver를 위한 .mar file 저장
-├──📁artifacts -> 후처리를 위한 .json 파일 저장
+├──📁model_store -> torchserver를 위한 .mar file 저장
 ├──📁Transformer_model -> .mar file을 만들기 위한 transformer 모델 저장공간
-├──📁configs -> Transformer 모델을 다운로드 받기위한 config 파일
+├──📁configs -> Transformer 모델을 다운로드 받기위한 config 파일 및 handler
 ├── Dockerfile
-├── Transformer_download.py
-├── Transformer_handler_generalized.py
+├── model_down_register.sh -> 서빙하기 위한 모델을 다운받는 script
+├── model_register.sh -> 모델을 torchserve에 등록하는 script
 ├── main.py # fastapi server
+├── utils.py
+├── requirements.txt
 └── README.md
 ```
  
@@ -44,7 +45,8 @@ dl_inderence
 ```
 git clone https://github.com/sml8648/dl_inference.git
 cd dl_inference
-docker build -t pytorch/torchserve
-docker run --rm -it -p 8000:8000 8080:8080 -p 8081:8081 -p 8082:8082 -p 7070:7070 -p 7071:7071 pytorch/torchserve:latest
+docker build . -t inference_server
+docker run --name inference_server -d -p 8000:8000 inference_server
+docker exec -i inference_server bash ./model_register.sh
 ```
 
