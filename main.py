@@ -181,8 +181,6 @@ async def model_infer(model_name: str, inputstr: InputStr):
 
     input_json = jsonable_encoder(inputstr)
 
-    breakpoint()
-
     file_hash = hash(datetime.now())
     file_path = f"./tmp/{file_hash}.txt"
 
